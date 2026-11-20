@@ -5,9 +5,9 @@
 ### 1.1 In-Page Content Script (`src/extension/content/`)
 - **`SelectionWatcher`**: Listens for user text highlights; calculates coordinates for floating tooltip.
 - **`FloatingActionMenu` (Shadow DOM)**: Renders quick-action buttons: *Explain*, *Summarize*, *Translate*, *Quiz*.
-- **`DwellTracker`**: Measures user reading dwell time and scroll behavior locally; triggers non-intrusive proactive assistance.
-- **`AccessibilityRenderer`**: Modifies typography on demand (toggles OpenDyslexic font, applies bionic reading bold cues, customizes line spacing).
-- **`DOMExtractor`**: Extracts clean article text and metadata from the host page using Readability algorithms without capturing ads/navbars.
+- **`DwellTracker`**: Measures local paragraph dwell time and scroll activity. Features idle detection (pauses when inactive > 45s or tab hidden), minimum word threshold (>= 25 words), 5-minute dismissal cooldown, and offline suppression.
+- **`AccessibilityRenderer`**: Modifies typography on demand. Injects local OpenDyslexic font assets via `chrome-extension://` to bypass host CSP, applies Bionic Reading exclusively to read-only text nodes while preserving host DOM and interactive elements, and supports 1-click full undo.
+- **`DOMExtractor`**: Extracts clean article text and metadata using `@mozilla/readability`. Implements multi-tier fallback for gated paywalls/canvas, hooks into SPA navigation events (`popstate`, `MutationObserver`), and handles cross-origin iframe boundaries.
 
 ### 1.2 Side Panel (`src/extension/sidepanel/`)
 - **`SidePanelApp`**: Root container responding to active tab changes.

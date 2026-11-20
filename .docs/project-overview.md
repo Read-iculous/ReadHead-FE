@@ -16,7 +16,7 @@ The frontend is architected as a dual-surface solution:
 - **BG-04 — Reading Continuity**: Multi-device synchronization of reading state, chat history, and highlights.
 - **BG-05 — Personalization**: Tailored explanation styles, custom reading pace, and Bring-Your-Own-Key (BYOK) provider routing.
 - **BG-06 — Reading Accessibility**: Custom typography, OpenDyslexic font support, bionic reading fixation cues, and AI text simplification.
-- **BG-07 — Control, Transparency & Trust**: Strict client-side PII inspection, transparent AI citations, and zero-knowledge encrypted credential handling.
+- **BG-07 — Control, Transparency & Trust**: Strict client-side PII inspection, transparent AI citations, and AES-256 encrypted credential handling.
 - **BG-08 — Measurable Evaluation**: Instant feedback loops (helpful/unhelpful ratings) and anonymized operational telemetry.
 
 ---
