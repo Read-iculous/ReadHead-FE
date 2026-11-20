@@ -38,7 +38,7 @@ The Web Management Portal complements the Chrome Extension, giving users and pla
 - **Request Volume**: Total AI requests served (last 24 hours / 7 days / 30 days).
 - **Provider Distribution**: Pie/Bar chart of provider usage (e.g. 55% Gemini, 30% OpenAI, 15% Claude).
 - **Error Breakdown**: Real-time error rate tracking (Rate Limit 429, Invalid Key 401, Upstream Timeout 504).
-- **Zero-Knowledge Privacy**: Admin views aggregate numeric counters only; no personal user text or prompt content is ever visible to admins.
+- **Strict Privacy Isolation**: Admin views aggregate numeric counters only; no personal user text or prompt content is ever visible to admins.
 
 ### 3.2 User Management (`/admin/users`)
 - **User Table**: ID, Email, Role (`User` / `Admin`), Registration Date, Last Active, Status (`Active` / `Suspended` / `Banned`).

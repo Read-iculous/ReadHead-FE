@@ -28,7 +28,8 @@
 - **Code & KaTeX**: `JetBrains Mono`, `Fira Code`, monospace.
 
 ### 3.2 Dyslexia & Accessibility Typography
-- **OpenDyslexic Font**: Integrated for users who toggle accessibility mode.
+- **OpenDyslexic Font**: Integrated for users who toggle accessibility mode. To bypass host-website Content Security Policies (CSP), `.woff2` font files are bundled directly in the extension package and loaded via `chrome-extension://<id>/assets/fonts/OpenDyslexic-Regular.woff2`.
+- **Bionic Reading Fixation Cues**: Applied strictly to pure `Node.TEXT_NODE` inside article bodies while skipping interactive elements (`<a>`, `<button>`, `<code>`). Original text content is stored in a `WeakMap<Node, string>` for instant 1-click non-destructive undo.
 - **Letter Spacing**: Configurable between normal (`0`), wide (`0.12em`), and extra wide (`0.2em`).
 - **Line Height**: Configurable between standard (`1.5`), relaxed (`1.75`), and loose (`2.0`).
 

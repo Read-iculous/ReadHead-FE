@@ -10,7 +10,7 @@ User Action (Login)
 POST /api/v1/auth/login ──────────► ReadHead-BE
        │                                  │
        ◄──────────────────────────────────┘
-Returns: { access_token, refresh_token, token_type: "bearer", expires_in: 900 }
+Returns: { "data": { access_token, refresh_token, token_type: "bearer" } }
        │
        ▼
 Stored in:
@@ -19,14 +19,14 @@ Stored in:
 ```
 
 ## 2. Token Lifecycle & Interceptor Logic
-- **Access Token TTL**: 15 minutes.
-- **Refresh Token TTL**: 7 days.
+- **Access Token TTL**: 60 minutes.
+- **Refresh Token TTL**: 30 days.
 - **Axios Request Interceptor**:
   - Automatically attaches `Authorization: Bearer <access_token>` to every outbound request to ReadHead-BE.
 - **Axios Response Interceptor (401 Handling)**:
-  - When a 401 Unauthorized status is returned, the client locks the request queue.
+  - When a 401 Unauthorized status is returned with code `TOKEN_EXPIRED`, the client locks the request queue.
   - Calls `POST /api/v1/auth/refresh` using the stored `refresh_token`.
-  - If refresh succeeds: Replaces stored tokens and replays the original failed request seamlessly.
+  - If refresh succeeds: Replaces stored `access_token` and replays the original failed request seamlessly.
   - If refresh fails (token revoked or expired): Fires `AUTH_EXPIRED` event to `useAuthStore`.
 
 ## 3. Draft Preservation on Expiry (SRS FR-ACC-06)
@@ -39,4 +39,11 @@ Stored in:
 ## 4. OAuth2 Popup Flow for Chrome Extension
 - Extension invokes `chrome.identity.launchWebAuthFlow`.
 - Redirect URL: `https://<extension-id>.chromiumapp.org/oauth2`.
-- Exchanges authorization code with `POST /api/v1/auth/oauth/{provider}/callback`.
+- Exchanges token / authorization code with `POST /api/v1/auth/oauth/google` or `POST /api/v1/auth/oauth/github`.
+
+## 5. Multi-Account Isolation & Storage Purge Protocol (`FR-ACC-04`)
+To prevent cross-account data leaks when switching user accounts on the same browser:
+1. **Local Storage Wipe**: On `logout()` or account switch, the client immediately removes `access_token`, `refresh_token`, all `draft_*` keys, and `cached_article_context` from `chrome.storage.local` and `sessionStorage`.
+2. **Context Broadcast**: The Background Service Worker broadcasts an internal runtime message `ACTION_PURGE_SESSION` to all open Side Panels, Popups, and Content Scripts.
+3. **State Invalidation**: All Zustand global stores (`useAuthStore`, `useTabContextStore`, `useSettingsStore`) are reset to initial empty states, and in-flight fetch requests are cancelled via `AbortController`.
+4. **UI Redirect**: Open extension panels redirect immediately to the `/login` view.

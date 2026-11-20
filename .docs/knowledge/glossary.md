@@ -11,3 +11,5 @@
 | **Dwell Time** | The duration a user spends lingering on a specific paragraph or section without scrolling, used as a cue for reading difficulty. |
 | **PII (Personally Identifiable Information)** | Sensitive personal information (credit cards, IDs, passwords) subject to client-side pre-flight blocking. |
 | **Groundedness** | The degree to which an AI-generated statement is directly supported by evidence extracted from the active reading material. |
+| **Privacy Mode** | An operational setting that disables automated reading history and URL logging while preserving active in-session chat and explicitly saved highlights. |
+| **Domain Blacklist Policy** | A security mechanism that automatically suspends all extension activity on user-specified sensitive origins (banking, internal company portals). |

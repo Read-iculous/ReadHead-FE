@@ -40,16 +40,24 @@ interface TabContextState {
 
 ### `useSettingsStore`
 ```ts
+interface AccessibilityProfile {
+  dyslexia_font: boolean;
+  font_size_delta: number;
+  line_spacing: number;
+  bionic_reading: boolean;
+  high_contrast: boolean;
+}
+
 interface SettingsState {
-  aiProvider: 'gemini' | 'openai' | 'claude';
-  proactiveSupportEnabled: boolean;
-  proactiveSensitivity: 'low' | 'medium' | 'high';
-  privacyModeEnabled: boolean;
-  readingPreferences: {
-    font: 'default' | 'opendyslexic' | 'sans';
-    bionicReading: boolean;
-    lineSpacing: number;
-  };
+  default_provider: 'gemini' | 'openai' | 'claude';
+  default_model: string;
+  target_language: string;
+  explanation_level: 'simple' | 'standard' | 'expert';
+  proactive_assistance_enabled: boolean;
+  proactive_sensitivity: 'low' | 'medium' | 'high';
+  data_protection_mode: boolean;
+  privacy_mode_enabled: boolean;
+  accessibility_profile: AccessibilityProfile;
   updateSettings: (partial: Partial<SettingsState>) => void;
 }
 ```
