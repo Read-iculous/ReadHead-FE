@@ -21,6 +21,7 @@
 | `remark-gfm` | `^4.0.0` | GitHub-flavored markdown (tables, checklists) |
 | `rehype-katex` + `katex` | `^7.0.0` | LaTeX mathematical equation rendering |
 | `@mozilla/readability` | `^0.5.0` | Clean web article extraction from DOM |
+| `pdfjs-dist` | `^4.0.0` | Client-side zero-binary PDF text extraction (max 100KB extract) |
 | `zod` | `^3.22.4` | Runtime schema validation |
 
 ## Development Dependencies (`devDependencies`)

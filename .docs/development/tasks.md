@@ -37,6 +37,7 @@ This document tracks all frontend engineering tasks required to fulfill the 12 S
 - [ ] **TASK-FE-203**: Implement in-page clean article extraction using `@mozilla/readability` (`DOMExtractor.ts`):
   - [ ] SPA History API interceptor (`pushState`, `popstate`, `MutationObserver` on URL/title changes).
   - [ ] Debounced container `MutationObserver` to re-apply saved highlights dynamically on client-side SPA navigation without requiring page reload.
+  - [ ] Highlight persistence & deletion lifecycle: Save highlights (`POST /reading/highlights`), list active page highlights (`GET /reading/highlights`), and soft-delete highlights (`DELETE /reading/highlights/{id}`) with visual DOM de-highlighting and offline outbox sync.
   - [ ] Tiered fallback for paywalls and canvas: Readability -> high-density text node scanning -> user text selection prompt.
   - [ ] Cross-origin iframe boundary detection (bypasses inaccessible iframes, prompts user selection).
   - [ ] Local client-side PDF text extraction using bundled Mozilla `pdf.js` (max 100 KB text extract, zero raw binary upload).

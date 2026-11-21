@@ -46,7 +46,7 @@ ReadHead-FE connects directly to `ReadHead-BE` (FastAPI). All requests must pref
 | Method | Endpoint | Payload | Response Type | Purpose |
 |---|---|---|---|---|
 | `POST` | `/ai/check-sensitive` | `{ text: "..." }` | `200 OK` `{"data": { is_sensitive, detected_types, blocked_by_policy }}` | Pre-flight scan of 100% outbound text (Feature H) |
-| `POST` | `/ai/stream` | `{ task: "explain"|"summarize"|"translate"|"simplify"|"chat", conversation_id?, reading_session_id, tab_id, page_url, page_title?, selected_text?, page_content?, content_type?, user_prompt?, provider?, model?, bypass_protection? }` | `text/event-stream` (SSE: `start`, `token`, `citation`, `done`, `error`) | Unified SSE streaming endpoint with tab isolation & disconnect preservation |
+| `POST` | `/ai/stream` | `{ task: "explain"|"summarize"|"translate"|"simplify"|"chat", target_language?, conversation_id?, reading_session_id, tab_id, page_url, page_title?, selected_text?, page_content?, content_type?, user_prompt?, provider?, model?, bypass_protection? }` | `text/event-stream` (SSE: `start`, `token`, `citation`, `done`, `error`) | Unified SSE streaming endpoint with tab isolation & disconnect preservation |
 | `POST` | `/ai/proactive-suggest` | `{ page_url, paragraph_text, dwell_time_seconds, bypass_protection? }` | `200 OK` `{"data": { has_suggestion, suggestion_type, hint, suggested_action }}` | Backend-assisted reading cue hint (Feature G) |
 | `POST` | `/ai/feedback` | `{ message_id, rating: "helpful"|"unhelpful", report_reason?, comment? }` | `201 Created` | Rate AI response (duplicate atomically updates rating; verifies message ownership) |
 
@@ -54,7 +54,7 @@ ReadHead-FE connects directly to `ReadHead-BE` (FastAPI). All requests must pref
 | Method | Endpoint | Payload / Params | Response | Purpose |
 |---|---|---|---|---|
 | `POST` | `/quiz/generate` | `{ page_url, page_text, bypass_protection? }` | `200 OK` `{"data": { quiz_id, questions: Array<QuizQuestion> }}` | Generate 3-5 multiple-choice questions without answers |
-| `POST` | `/quiz/{quiz_id}/submit`| `{ answers: { "question_id": selected_option_index } }` | `200 OK` `{"data": { score, total, review: Array<QuestionReview> }}` | Submit answers for grading, explanation, and score logging |
+| `POST` | `/quiz/{quiz_id}/submit`| `{ answers: { "question_id": selected_option_index } }` | `200 OK` `{"data": { score, total, review: Array<QuestionReview> }}` | Submit answers for grading (rejects re-submissions with `400 QUIZ_ALREADY_SUBMITTED`) |
 
 ### 2.6 Conversations, Reading History & Highlights (`/api/v1/conversations` & `/api/v1/reading` — Feature I)
 | Method | Endpoint | Payload / Params | Response | Purpose |
@@ -67,6 +67,7 @@ ReadHead-FE connects directly to `ReadHead-BE` (FastAPI). All requests must pref
 | `DELETE`| `/reading/history` | *None* | `204 No Content` | Clear full browsing & reading history (`FR-HIS-05`) |
 | `GET` | `/reading/highlights` | `?page=1&page_size=20&page_url=...` | `200 OK` `{"data": {"items": Array<HighlightItem>, total, page, page_size, total_pages}}` | Fetch saved highlights on web pages |
 | `POST` | `/reading/highlights` | `{ page_url, highlighted_text, user_note?, color? }` | `201 Created` `{"data": HighlightItem}` | Save text highlight & personal note |
+| `DELETE`| `/reading/highlights/{id}` | *None* | `204 No Content` | Soft delete highlight & generate sync tombstone (`version` incremented) |
 
 ### 2.7 Multi-Device Synchronization (`/api/v1/sync` — Feature J)
 | Method | Endpoint | Payload / Params | Response | Purpose |
