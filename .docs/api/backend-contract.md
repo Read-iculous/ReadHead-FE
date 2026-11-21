@@ -46,7 +46,7 @@ ReadHead-FE connects directly to `ReadHead-BE` (FastAPI). All requests must pref
 | Method | Endpoint | Payload | Response Type | Purpose |
 |---|---|---|---|---|
 | `POST` | `/ai/check-sensitive` | `{ text: "..." }` | `200 OK` `{"data": { is_sensitive, detected_types, blocked_by_policy }}` | Pre-flight scan of 100% outbound text (Feature H) |
-| `POST` | `/ai/stream` | `{ task: "explain"|"summarize"|"translate"|"simplify"|"chat", tab_id, page_url, page_title, selected_text?, page_content?, content_type?, user_prompt?, provider?, model?, bypass_protection? }` | `text/event-stream` (SSE: `start`, `token`, `citation`, `done`, `error`) | Unified SSE streaming endpoint with tab isolation & disconnect preservation |
+| `POST` | `/ai/stream` | `{ task: "explain"|"summarize"|"translate"|"simplify"|"chat", conversation_id?, reading_session_id, tab_id, page_url, page_title?, selected_text?, page_content?, content_type?, user_prompt?, provider?, model?, bypass_protection? }` | `text/event-stream` (SSE: `start`, `token`, `citation`, `done`, `error`) | Unified SSE streaming endpoint with tab isolation & disconnect preservation |
 | `POST` | `/ai/proactive-suggest` | `{ page_url, paragraph_text, dwell_time_seconds, bypass_protection? }` | `200 OK` `{"data": { has_suggestion, suggestion_type, hint, suggested_action }}` | Backend-assisted reading cue hint (Feature G) |
 | `POST` | `/ai/feedback` | `{ message_id, rating: "helpful"|"unhelpful", report_reason?, comment? }` | `201 Created` | Rate AI response (duplicate atomically updates rating; verifies message ownership) |
 
@@ -60,24 +60,24 @@ ReadHead-FE connects directly to `ReadHead-BE` (FastAPI). All requests must pref
 | Method | Endpoint | Payload / Params | Response | Purpose |
 |---|---|---|---|---|
 | `GET` | `/conversations` | `?page=1&page_size=20&search=keyword` | `200 OK` `{"data": {"items": Array<ConversationSummary>, total}}` | Fetch paginated chat sessions |
-| `GET` | `/conversations/{id}/messages`| `?page=1&limit=50&order=asc` | `200 OK` `{"data": {"items": Array<ChatMessage>}}` | Fetch paginated messages for specific conversation |
+| `GET` | `/conversations/{id}/messages`| `?page=1&page_size=50&order=asc` | `200 OK` `{"data": {"items": Array<ChatMessage>, total, page, page_size, total_pages}}` | Fetch paginated messages for specific conversation |
 | `DELETE`| `/conversations/{id}` | *None* | `204 No Content` | Soft delete conversation & generate sync tombstone (`FR-HIS-04`) |
-| `POST` | `/reading/history` | `{ page_url, page_title, reading_time_seconds, cached_summary? }` | `201 Created` | Record read article (blocked if Privacy Mode is active) |
-| `GET` | `/reading/history` | `?page=1&limit=20&search=keyword` | `200 OK` `{"data": {"items": Array<HistoryItem>, total}}` | List browsing & reading history with pagination |
+| `POST` | `/reading/history` | `{ page_url, page_title, reading_time_seconds, cached_summary? }` | `201 Created` or `200 OK` (if Privacy Mode) | Record read article (skipped if Privacy Mode or domain blacklisted) |
+| `GET` | `/reading/history` | `?page=1&page_size=20&search=keyword` | `200 OK` `{"data": {"items": Array<HistoryItem>, total, page, page_size, total_pages}}` | List browsing & reading history with pagination |
 | `DELETE`| `/reading/history` | *None* | `204 No Content` | Clear full browsing & reading history (`FR-HIS-05`) |
-| `GET` | `/reading/highlights` | `?page_url=...` | `200 OK` `{"data": {"items": Array<HighlightItem>}}` | Fetch saved highlights on web pages |
+| `GET` | `/reading/highlights` | `?page=1&page_size=20&page_url=...` | `200 OK` `{"data": {"items": Array<HighlightItem>, total, page, page_size, total_pages}}` | Fetch saved highlights on web pages |
 | `POST` | `/reading/highlights` | `{ page_url, highlighted_text, user_note?, color? }` | `201 Created` `{"data": HighlightItem}` | Save text highlight & personal note |
 
 ### 2.7 Multi-Device Synchronization (`/api/v1/sync` — Feature J)
 | Method | Endpoint | Payload / Params | Response | Purpose |
 |---|---|---|---|---|
-| `POST` | `/sync/pull` | `{ cursor: "ISO_TIMESTAMP", limit: 100 }` | `200 OK` `{"data": { updated_conversations, updated_highlights, updated_settings, next_cursor, has_more }}` | Pull newer changes & tombstones since cursor |
+| `POST` | `/sync/pull` | `{ cursor: "BASE64_COMPOSITE_CURSOR", limit: 100 }` | `200 OK` `{"data": { updated_conversations, updated_highlights, updated_settings, next_cursor, has_more }}` | Pull newer changes & tombstones using composite cursor `(updated_at, id)` |
 | `POST` | `/sync/push` | `{ mutations: Array<{ entity_type, action, entity_id, base_version, payload }> }` | `200 OK` or `409 SYNC_CONFLICT` | Push local mutations with optimistic lock validation |
 
 ### 2.8 Admin Telemetry & Management (`/api/v1/admin` — Role `admin` Only)
 | Method | Endpoint | Payload / Params | Response | Purpose |
 |---|---|---|---|---|
 | `GET` | `/admin/telemetry` | `?timeframe=24h` (`24h` \| `7d` \| `30d`) | `200 OK` `{"data": { total_requests, provider_split, error_rate, avg_latency_ms }}` | Platform telemetry & health monitoring |
-| `GET` | `/admin/users` | `?page=1&limit=50&status=active` | `200 OK` `{"data": { items: Array<AdminUserView>, total }}` | View user accounts and activity |
+| `GET` | `/admin/users` | `?page=1&page_size=50&status=active` | `200 OK` `{"data": { items: Array<AdminUserView>, total, page, page_size, total_pages }}` | View user accounts and activity |
 | `PATCH`| `/admin/users/{id}/status` | `{ status: "active" \| "suspended" \| "banned" }` | `200 OK` `{"data": { user_id, new_status }}` | Moderate user account status |
-| `GET` | `/admin/feedback` | `?page=1&limit=50` | `200 OK` `{"data": { items: Array<FeedbackItem>, total }}` | View user thumbs up/down and report logs |
+| `GET` | `/admin/feedback` | `?page=1&page_size=50` | `200 OK` `{"data": { items: Array<FeedbackItem>, total, page, page_size, total_pages }}` | View user thumbs up/down and report logs |
