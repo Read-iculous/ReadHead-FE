@@ -6,26 +6,38 @@ This document tracks all frontend engineering tasks required to fulfill the 12 S
 
 ## Phase 1 — Project Scaffolding & Shared Infrastructure
 - [x] **TASK-FE-101**: Establish project context, rules (`.agents/rules/`), and documentation hierarchy (`.docs/`).
-- [ ] **TASK-FE-102**: Initialize `package.json`, Vite configuration, TypeScript `tsconfig.json`, and `@crxjs/vite-plugin` manifest configuration.
+- [ ] **TASK-FE-102**: Initialize `package.json`, Vite configuration, TypeScript `tsconfig.json`, and `@crxjs/vite-plugin` manifest configuration:
+  - [ ] Configure `web_accessible_resources` in `manifest.json` for `fonts/*.woff2` and extension icons to allow in-page DOM font loading without host CSP blocks.
 - [ ] **TASK-FE-103**: Configure Tailwind CSS, PostCSS, and Shadcn/ui directory scaffolding.
 - [ ] **TASK-FE-104**: Define TypeScript data types matching ReadHead-BE Pydantic models (`src/shared/types/`).
 - [ ] **TASK-FE-105**: Implement typed Axios API client with automatic JWT token refresh interceptor (`src/shared/services/apiClient.ts`):
+  - [ ] Proactive token refresh 3 minutes prior to `expires_in` expiration; supports backend 60s clock drift leeway.
   - [ ] Automatic silent token refresh on 401 with 30s concurrent refresh grace period support.
   - [ ] Immediate purge of local session upon receiving `401 USER_SUSPENDED` or `401 REFRESH_TOKEN_REVOKED`.
 - [ ] **TASK-FE-106**: Implement native SSE streaming reader with `fetch` and `ReadableStream` (`src/shared/services/sseStreamReader.ts`):
+  - [ ] Execute stream directly within UI document context (Side Panel / Popup) to avoid Manifest V3 Background Worker 30s idle termination.
   - [ ] Parse typed events (`start`, `token`, `citation`, `done`, `error`).
   - [ ] AbortController support for client-side cancellation with partial response preservation.
   - [ ] Enforce client-side guard for max 2 active concurrent streams (`429 STREAM_CONCURRENCY_EXCEEDED`).
-- [ ] **TASK-FE-107**: Implement Zustand global stores: `useAuthStore`, `useTabContextStore`, and `useSettingsStore`.
+- [ ] **TASK-FE-107**: Implement Zustand global stores:
+  - [ ] `useAuthStore` managing session, tokens, and unauthenticated/guest state.
+  - [ ] `useTabContextStore` generating and holding tab-specific `reading_session_id` in `sessionStorage`.
+  - [ ] `useSettingsStore` holding accessibility profile (functional in guest mode via `chrome.storage.local`; auto-merges to cloud on login).
 - [ ] **TASK-FE-108**: Implement client storage abstraction layer (`chrome.storage.local` + `localStorage`).
 
 ---
 
 ## Phase 2 — Chrome Extension Surfaces (Manifest V3)
-- [ ] **TASK-FE-201**: Implement Background Service Worker (`background.ts`) managing tab events, alarms, and cross-context routing.
-- [ ] **TASK-FE-202**: Implement Content Script text selection detector and Shadow DOM floating action menu (`SelectionWatcher`, `FloatingActionMenu`).
+- [ ] **TASK-FE-201**: Implement Background Service Worker (`background.ts`) managing tab events, alarms, and cross-context routing:
+  - [ ] Handle `chrome.runtime.onInstalled` to programmatically inject Content Scripts into existing HTTP/HTTPS tabs via `chrome.scripting.executeScript` (avoids requiring manual tab refresh upon install).
+- [ ] **TASK-FE-202**: Implement Content Script text selection detector and Shadow DOM floating action menu (`SelectionWatcher`, `FloatingActionMenu`):
+  - [ ] Mount in `closed Shadow DOM` with `:host { all: initial; }` to strictly isolate from host page CSS bleed.
+  - [ ] Attach `mouseup` / selection listeners using **Event Capturing** `{ capture: true }` to defeat host page `stopPropagation()` blockers (e.g. Google Docs, Notion, Medium).
+  - [ ] WCAG 2.1 AA Keyboard Accessibility: configurable hotkey (`Alt+R` / `Ctrl+Shift+E`) to invoke action on selected text, `Tab` focus trapping, and `Escape` to dismiss.
 - [ ] **TASK-FE-203**: Implement in-page clean article extraction using `@mozilla/readability` (`DOMExtractor.ts`):
   - [ ] SPA History API interceptor (`pushState`, `popstate`, `MutationObserver` on URL/title changes).
+  - [ ] Debounced container `MutationObserver` to re-apply saved highlights dynamically on client-side SPA navigation without requiring page reload.
+  - [ ] Highlight persistence & deletion lifecycle: Save highlights (`POST /reading/highlights`), list active page highlights (`GET /reading/highlights`), and soft-delete highlights (`DELETE /reading/highlights/{id}`) with visual DOM de-highlighting and offline outbox sync.
   - [ ] Tiered fallback for paywalls and canvas: Readability -> high-density text node scanning -> user text selection prompt.
   - [ ] Cross-origin iframe boundary detection (bypasses inaccessible iframes, prompts user selection).
   - [ ] Local client-side PDF text extraction using bundled Mozilla `pdf.js` (max 100 KB text extract, zero raw binary upload).
@@ -38,12 +50,16 @@ This document tracks all frontend engineering tasks required to fulfill the 12 S
   - [ ] Paragraph threshold filter: measures only `<p>` nodes with >= 25 words or >= 150 characters.
   - [ ] Dismissal fatigue policy: 5-minute cooldown on domain and 3-paragraph suppression upon user closing a hint chip.
   - [ ] Offline silence: suppresses proactive triggers when `navigator.onLine = false`.
+  - [ ] Reliable flush strategy: periodic 45s heartbeat, `document.visibilitychange` handler, and `fetch(..., { keepalive: true })` on tab unload.
 - [ ] **TASK-FE-206**: Build Chrome Side Panel UI (`sidepanel.tsx`):
   - [ ] Tab header & Model selector (`Gemini`, `OpenAI`, `Claude`).
   - [ ] Chat conversation feed with markdown, syntax highlighting, and KaTeX math.
   - [ ] Real-time token streaming with animated typing cursor.
   - [ ] Grounded citation pills with host page auto-scroll trigger.
-  - [ ] Thumbs up/down feedback ratings.
+  - [ ] Thumbs up/down feedback ratings:
+    - [ ] Instant submission on Thumbs Up (`rating: "helpful"`).
+    - [ ] Lightweight popover on Thumbs Down (`rating: "unhelpful"`) with 4 categorization chips (`inaccurate`, `hallucination`, `harmful`, `other`) and optional comment box.
+    - [ ] Seamless state toggle (re-clicking Thumbs Up atomically updates existing rating and clears report reason).
 - [ ] **TASK-FE-207**: Implement Interactive Comprehension Quiz view (`QuizCard.tsx`) with instant answer grading and rationale display.
 - [ ] **TASK-FE-208**: Build Action Popup (`popup.tsx`) for fast status inspection and one-click Side Panel toggle.
 - [ ] **TASK-FE-209**: Build Options Page (`options.tsx`) for BYOK key vault management and domain blacklist configuration.
@@ -51,9 +67,10 @@ This document tracks all frontend engineering tasks required to fulfill the 12 S
 ---
 
 ## Phase 3 — Privacy, Guardrails & Security
-- [ ] **TASK-FE-301**: Build client-side pre-flight PII / credential detector (`sensitiveDataInspector.ts`) with default-block modal.
+- [ ] **TASK-FE-301**: Build client-side pre-flight PII / credential detector (`sensitiveDataInspector.ts`) with default-block modal:
+  - [ ] Input draft is preserved on block; modal provides "Chỉnh sửa" (focuses cursor at detected secret) and "Vẫn gửi (Override)" (`bypass_protection: true`).
 - [ ] **TASK-FE-302**: Implement draft preservation & safe reconnection (`draftRecoveryService.ts`):
-  - [ ] Debounced (300ms) continuous autosave to `chrome.storage.local` keyed by `draft_<tabId>`.
+  - [ ] Debounced (300ms) continuous autosave to `chrome.storage.local` keyed by `draft_${hash(page_url)}_${reading_session_id}`, preserving drafts across tab duplication and closed tab restore (`Ctrl+Shift+T`).
   - [ ] Automatic draft restoration into Side Panel input upon tab switch, browser restart, or token expiry.
   - [ ] Strict Anti-Auto-Retry compliance (`FR-ERR-04`): Online recovery displays connectivity toast, never auto-resubmits pending requests.
 - [ ] **TASK-FE-303**: Implement domain blacklist check in background worker to completely silence extension on sensitive origins.
@@ -62,7 +79,8 @@ This document tracks all frontend engineering tasks required to fulfill the 12 S
   - [ ] Wipe `chrome.storage.local` tokens, drafts, and cached article extracts.
   - [ ] Broadcast `ACTION_PURGE_SESSION` across all open Side Panels, Popups, and Content Scripts.
   - [ ] Reset all Zustand stores and abort pending fetch calls via `AbortController`.
-- [ ] **TASK-FE-306**: Implement multi-device sync conflict resolution modal (`ConflictResolverModal.tsx`):
+- [ ] **TASK-FE-306**: Implement multi-device sync client & conflict resolution modal (`ConflictResolverModal.tsx`):
+  - [ ] Composite Cursor `(updated_at, id)` support in sync pull requests.
   - [ ] Intercept `409 SYNC_CONFLICT` containing `server_record` and `client_version`.
   - [ ] Present visual diff dialog allowing user to choose "Keep Local Version" or "Accept Cloud Version".
 - [ ] **TASK-FE-307**: Implement offline IndexedDB sync outbox queue (`sync_outbox`):

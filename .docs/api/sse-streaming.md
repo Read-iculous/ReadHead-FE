@@ -4,6 +4,9 @@
 ReadHead-FE receives AI completions via Server-Sent Events (SSE) from `POST /api/v1/ai/stream`.
 Because native `EventSource` in web browsers only supports `GET` requests without request body, ReadHead-FE implements an SSE reader using `window.fetch` + `response.body.getReader()`.
 
+> [!IMPORTANT]
+> **Manifest V3 Execution Context**: The SSE stream connection is opened directly from the active UI document context (Side Panel `sidepanel.tsx` or Action Popup `popup.tsx`), **never** through the Background Service Worker (`background.ts`). This guarantees uninterrupted streaming for long AI generations (> 30s), completely avoiding Manifest V3 idle service worker termination.
+
 ---
 
 ## 2. Event Types & Payloads
@@ -35,10 +38,10 @@ data: {"source_id": "p-14", "text_snippet": "Neural networks process data in lay
 ```
 
 ### `event: done`
-Signals normal stream completion with metadata.
+Signals normal stream completion with grounding metadata (ADR-008).
 ```
 event: done
-data: {"message_id": "msg-uuid", "finish_reason": "stop", "total_tokens": 142, "provider": "gemini", "model": "gemini-1.5-flash"}
+data: {"message_id": "msg-uuid", "finish_reason": "stop", "total_tokens": 142, "provider": "gemini", "model": "gemini-1.5-flash", "is_grounded": true, "uncertainty_flag": false, "grounding_notes": "Grounded via page paragraph p-14"}
 ```
 
 ### `event: error`
